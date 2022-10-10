@@ -1,0 +1,154 @@
+\documentclass[10pt]{article}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with`a4paper' for UK/EU standard size
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{mwe}
+\usepackage{fullpage}
+\usepackage{hyperref}
+\hypersetup{linkcolor=blue, urlcolor=blue, colorlinks}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+
+\title{Assignment 1: \\ Using the CPU and the GPU \\ \large \textit{Accelerator-based Programming}}
+\author{Oskar Tegby}
+\date{September 2022}
+
+\setlength{\parindent}{0pt}
+
+\begin{document}
+\maketitle
+
+\begin{tikzpicture}[remember picture, overlay]
+  \node [anchor=north west, inner sep=25pt]  at (current page.north west)
+     {\includegraphics[height=3.3cm]{uppsala-universitet-logo.png}};
+\end{tikzpicture}
+
+\section{Introduction}
+This assignment studies the computational bandwidths that scalar and vectorized implementations have on the CPU, as well as that of a parallelized implementation on a GPU using CUDA. The bandwidth is tested on the simple vector update. Namely
+\begin{center}
+    \texttt{for (int i = 0; i < N; ++i)} \\
+    \quad\texttt{z[i] = a * x[i] + y[i];}
+\end{center}
+which is completely vectorizable and parallelizable. In this report, we discuss the effects that the cache hierarchy and graphics memory have in this setting, since these vector operations are bandwidth-bound. All tests were run on the Snowy node of the UPPMAX cluster, as well as locally on an Intel i3-7100U.
+\section{Tasks}
+\subsection{Task 1}
+The code generates two vectors, $x$ and $y$, with random floating point numbers uniformly distributed between zero and one. It then performs the linear algebra operation $z=a\cdot x+y$ elementwise using a real scalar $a$ and the said vectors. It repeats this operation twenty times using one for loop that, and one for the element-wise operations on the vectors. The former lets us average out any noise in the bandwidth measurements so that it does not affect our results noticably. Thus, we assume that there is no computational noise here.
+\subsection{Task 2}
+The compilation flag O2 compiles the code without vectorization, and the 03 flag with it. This is visible since the peak throughput is about 17 Gb/s with the scalar O2 flag, whereas it is about 70 Gb/s with vectorizing O3 flag, as is seen in Figure \ref{fig:flags}. \\
+
+Assuming that the compiler vectorizes with 128 bit instructions, which each fits four floating point values (since a float is four bytes, and a byte is eight bits), this means that we get almost ideal speedup. Otherwise, if we are instead using 256-bit or 512-bit instructions, then what we observe is a poor speedup. \\
+
+The reason why we would observe this near ideal increase in throughput is because the code is perfectly vectorizable, which means that we do not miss any out on any improvement because of poor memory alignment or poor memory accesses. If anything, then there should be some slowdown because of packing the scalar values into vectors, but this seems to be negligible here. The assembly code could be studied to figure this out for certain, but this was not done here (admittedly, increasing unnecessary doubt). \\
+
+As seen in Figure \ref{fig:cluster_with_o3}, we have distinct drops in throughput. The reason for which is that we first exhaust the L1 cache, then the L2 cache, and, lastly, the LLC cache, which introduces computational latency. We see these three distinct drops in Figure \ref{fig:cluster_with_o3}. That decreases the throughput since we have to wait longer to fetch data since data not fitting in cache results in capacity misses. A fundamental fact of microelectronics is that the latency grows with the size of the memory. Thus, this effect gets worse as the caches fill up. However, this is something which we do not clearly observe here.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{cluster_with_o2.pdf}
+        \caption{Cluster with O2.}
+        \label{fig:cluster_with_o2}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{cluster_with_o3.pdf}
+        \caption{Cluster with O3.}
+        \label{fig:cluster_with_o3}
+    \end{subfigure}\hfill
+    \caption{The cluster running the code compiled with the O2 and O3 compilation flags, respectively.}
+    \label{fig:flags}
+\end{figure}
+\subsection{Task 3}
+Running the code with \texttt{-march=native} on our local machine, we get about 110 Gb/s throughput, which is a great increase in throughput when compare to the cluster. This is likely because of differences in computer architecture since the clockspeeds only differ by 200 MHz. For instance, some architectures lower the frequency when running SIMD instructions because their pipelines use a lot of energy. \\
+
+As seen in Figure \ref{fig:align} , the effect of using the \texttt{align} runtime flag almost seems negligible both on the cluster and locally, which is counterintuitive given that the code is compiled with the O2 flag. The reason for which is that it does not enable any vectorization, and, thus, adding it manually should result in about the same speedup that the O3 flag gives the code. This means that the results should be strikingly similar, but they clearly are not. The most likely explanation is that the flag was not used correctly.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{cluster_with_and_without_align.pdf}
+        \caption{Cluster with and without align.}
+        \label{fig:cluster_align}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{local_with_and_without_align.pdf}
+        \caption{Local with and without align.}
+        \label{fig:local_align}
+    \end{subfigure}\hfill
+    \caption{The cluster and local compiled with O2, and run with \texttt{-align 0} and \texttt{-align 1}, respectively.}
+    \label{fig:align}
+\end{figure}
+However, one result contradicting that in Figure \ref{fig:align} is the fact that the local computation without align has a throughput which varies much more compared to the aligned version of the code, which supports the idea that alignment actually took place. Presumably, there is some way to investigate this closer.
+\subsection{Task 5}
+As seen Figure \ref{fig:gpu_reference}, the performance is initially small and then peaks just before it drops significantly. The reason for which is that there initially is too little data to efficiently use most of the threads of the graphics card, and later on there is too much data in order to fit in the L2 cache, which means that we have to transfer the data from the main graphics memory instead. That severely limits the performance, as we can see by it flat-lining just below the main memory bandwidth, which is 320 Gb/s.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{cluster_with_O3.pdf}
+        \caption{Cluster with O3.}
+        \label{fig:cpu_reference}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{cuda_float_block_size_512.pdf}
+        \caption{CUDA with block size 512.}
+        \label{fig:gpu_reference}
+    \end{subfigure}\hfill
+    \caption{Comparison between SIMD and CUDA.}
+    \label{fig:simd_and_cuda_comparison}
+\end{figure}
+\subsection{Task 6}
+As seen in Figure \ref{fig:cuda_float_GBs}, a block size of one is not large enough since we cannot use the graphics card as intended with that little work per computational unit. Graphics cards have thousands of streaming multiprocessors (SM) which are split into blocks (who are, in turn, split into grids). The block size sets the number of elements each block works on, so we need to set it high enough to keep each SM of the block busy. This elementarily explains the behavior that we see in Figure \ref{fig:single_and_double_cuda_GBs}.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{cuda_float_block_sizes.pdf}
+        \caption{CUDA with floating point precision, GB/s.}
+        \label{fig:cuda_float_GBs}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{cuda_double_block_sizes.pdf}
+        \caption{CUDA with double point precision, GB/s.}
+        \label{fig:cuda_double_GBs}
+    \end{subfigure}\hfill
+    \caption{CUDA using block sizes 1, 128, 256, 512, and 1024 with \texttt{single} and \texttt{double} precision.}
+    \label{fig:single_and_double_cuda_GBs}
+\end{figure}
+When we increase the block size, we get greater throughput until we hit the block size limit of the graphics card, which is 1024 on the graphics cards on Snowy. The reason, aside from asignning enough work to each block, is that each block has a shared memory which is faster than accessing the rest of the memory hierarchy. Thus, working within that memory is faster than working across different blocks. Hence, we should use the maximum block size in order to use as much of that memory as possible.
+\subsection{Task 7}
+Doubling the data size increases the throughput, but it decreases the number of updates per second since we are able to transfer fewer numbers when we double the precision, as is seen by comparing the height of the peaks in Figure \ref{fig:cuda_float_MUPD} and \ref{fig:cuda_double_MUPD}. That is, we can send more data with double precision, but not the double that we need in order to compute with double precision. Hence, it is clear that we are memory-bound in this setting (as opposed to being compute-bound). \\
+
+The Roofline model states that we either are in one or the other bound, which makes sense as we either lack the ability to compute the data that we get, or that we do not get the data fast enough to begin with. Here, it is easy to perform operations, so the need for bandwidth is the only thing that can limit us. That is not usually the case. Note that we are measuring the throughput in gigabyte per second and million updates per second in Figure \ref{fig:single_and_double_cuda_GBs} and \ref{fig:single_and_double_cuda_MUPD}, respectively.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{cuda_float_block_sizes_mupd.pdf}
+        \caption{CUDA with floating point precision, MUPD.}
+        \label{fig:cuda_float_MUPD}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{cuda_double_block_sizes_mupd.pdf}
+        \caption{CUDA with double point precision, MUPD.}
+        \label{fig:cuda_double_MUPD}
+    \end{subfigure}\hfill
+    \caption{CUDA using block sizes 1, 128, 256,  512, and 1024 with \texttt{single} and \texttt{double} precision.}
+    \label{fig:single_and_double_cuda_MUPD}
+\end{figure}
+\end{document}
