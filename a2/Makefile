@@ -1,11 +1,20 @@
 CC=nvcc
-SRC=stream_triad_cuda_task1.cu
-EXEC=stream_triad_cuda_task1
+RM=rm -f
+BLAS=-lcublas
+SRC1=native.cu
+SRC2=cublas.cu
+EXEC1=native
+EXEC2=cublas
 
-task1: 
-	$(CC) src/$(SRC) -o bin/$(EXEC) 
+all: native cublas
+
+native:
+	$(CC) src/$(SRC1) -o bin/$(EXEC1)
+
+cublas:
+	$(CC) $(BLAS) src/$(SRC2) -o bin/$(EXEC2) 
 
 .PHONY: clean
 
 clean:
-	rm -f bin/*
+	$(RM) bin/*

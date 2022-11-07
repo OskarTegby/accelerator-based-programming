@@ -1,5 +1,5 @@
 # Fdb version 3
-["lualatex"] 1667586480 "a2.tex" "a2.pdf" "a2" 1667586482
+["lualatex"] 1667761264 "a2.tex" "a2.pdf" "a2" 1667761266
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex8.tfm" 1246382020 988 bdf658c3bfc2d96d3c8b02cfc1c94c20 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmex10.tfm" 1136768653 992 662f679a0b3d2d53c1b94050fdaa3f50 ""
@@ -166,6 +166,7 @@
   "/usr/share/texmf/fonts/tfm/public/lm/rm-lmr17.tfm" 1254938640 11948 fa976674f030491ad35532a8a1e37325 ""
   "/usr/share/texmf/fonts/tfm/public/lm/rm-lmr5.tfm" 1254938640 11804 aefb10c002e6492c25236524a447f969 ""
   "/usr/share/texmf/fonts/tfm/public/lm/rm-lmr7.tfm" 1254938640 11852 5a9022f105fd1ee2797df861e79ae9a0 ""
+  "/usr/share/texmf/fonts/tfm/public/lm/rm-lmr9.tfm" 1254938640 11884 c93929a6974dce79eabb778f219d7e18 ""
   "/usr/share/texmf/fonts/tfm/public/lm/rm-lmri12.tfm" 1254938640 16968 09a34e0af90920bbcece784f13606525 ""
   "/usr/share/texmf/fonts/tfm/public/lm/rm-lmtt10.tfm" 1254938640 1340 adaa94f9add991a099a6fc98bbb5f02c ""
   "/usr/share/texmf/fonts/tfm/public/lm/rm-lmtt8.tfm" 1254938640 1348 e9ce72e654d76f23fb9e1b8842e0576a ""
@@ -175,6 +176,7 @@
   "/usr/share/texmf/fonts/type1/public/lm/lmr12.pfb" 1254938640 113634 f99c44d58bae0863375faf0e1d74d612 ""
   "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" 1254938640 119752 1bd8d06e4079df624bf59ce3ad7c9aa6 ""
   "/usr/share/texmf/fonts/type1/public/lm/lmr7.pfb" 1254938640 121145 68312a933e2c689ed40ec0aba373e279 ""
+  "/usr/share/texmf/fonts/type1/public/lm/lmr9.pfb" 1254938640 121065 50bbfa703ce7e11638752ef5a6d120c7 ""
   "/usr/share/texmf/fonts/type1/public/lm/lmri12.pfb" 1254938640 109265 32320cb6133d4d76bf83e27b5eb4009b ""
   "/usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb" 1254938640 113227 1010e11451afc2822c95dae77c390042 ""
   "/usr/share/texmf/tex/latex/lm/ot1lmr.fd" 1256929440 1880 bae7b659316f7344a86218ad38b01d91 ""
@@ -182,10 +184,13 @@
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1663530652 4036811 4cb80868003c86b962b6b5ae1e1e2902 ""
   "/var/lib/texmf/tex/generic/config/language.dat" 1663530654 2738 b05555f7061675801075032b9b6ace45 ""
   "/var/lib/texmf/web2c/luahbtex/lualatex.fmt" 1663530674 4555259 1028907e83ab6b59262511d304db8528 ""
-  "a2.aux" 1667586482 2100 672102bbd4716bd12ae6ed027f5f5326 "lualatex"
-  "a2.out" 1667586482 731 485f4c96e7e99bc5242276e25b279fed "lualatex"
-  "a2.tex" 1667586470 3609 73702a218419765b3469a9173140ed35 ""
-  "figs/mv_mult.png" 1667496134 24354 8d6561b679a2c2b73d42f679a4448946 ""
+  "a2.aux" 1667761266 3625 2330a6e7c081c44c93743e1673a65b51 "lualatex"
+  "a2.out" 1667761266 1033 e4fbbd283721bea2338ef6f91dca35dc "lualatex"
+  "a2.tex" 1667761259 8256 1df39aca139ff01c5177130d0d614de5 ""
+  "figs/cublas_linear.pdf" 1667760644 12909 20581fa6ca9d64bae58a0afb29e74fa5 ""
+  "figs/cublas_loglog.pdf" 1667760644 12189 8e685597203eb7e5a938ea1e22324aab ""
+  "figs/linear.pdf" 1667746553 11606 bcfd8caaeef427ed29364079774aa5e0 ""
+  "figs/loglog.pdf" 1667746553 10924 902db624bc13ff49a131a395fbf9bb8d ""
   "uu_logo.png" 1665421235 102560 1fa7866017ad3c23e4e6b8b86516114c ""
   (generated)
   "a2.aux"
