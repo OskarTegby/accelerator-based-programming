@@ -68,7 +68,7 @@ Furthermore, all results are computed as the averages of 20 tests each run with 
 \section{Tasks}
 \subsection{Task 1}
 \subsubsection{Part A}
-Figure \ref{fig:mv_native_mult} shows the throughput of the single-precision matrix-vector multiplication run with N = M ranging from 104 to 9576 obtained by running the code with \texttt{block\_size} = 512. The throughput is computed as
+Figure \ref{fig:case_a_native_mv_mult} shows the throughput of the single-precision matrix-vector multiplication run with N = M ranging from 104 to 9576 obtained by running the code with \texttt{block\_size} = 512. The throughput is computed as
 \begin{align*}
     (MN + N + M)\cdot\texttt{sizeof}(\texttt{float})\cdot 10^{-9}/t_{\text{best}}.
 \end{align*}
@@ -90,47 +90,80 @@ From these settings we expect a speedup of $\texttt{n\_blocks}$ as that is the n
     \centering
     \begin{subfigure}[b]{0.49\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{figs/loglog.pdf}
+        \includegraphics[width=\linewidth]{figs/case_a_native_loglog.pdf}
         \caption{The increase with loglog scale.}
         \label{fig:native_loglog}
     \end{subfigure}\hfill
     \begin{subfigure}[b]{0.49\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{figs/linear.pdf}
+        \includegraphics[width=\linewidth]{figs/case_a_native_linear.pdf}
 	\caption{The increase with linear scale.}
 	\label{fig:native_linear}
     \end{subfigure}\hfill
     \caption{Native matrix-vector multiplication with $M=N$ ranging from 100 to 10000.}
-    \label{fig:mv_native_mult}
+    \label{fig:case_a_native_mv_mult}
 \end{figure}
 \subsection{Task 2}
 \subsubsection{Part A}
-The results using cuBLAS are found in Figure \ref{fig:mv_cublas_mult}. There, we observe roughly the same behavior as in Figure \ref{fig:mv_native_mult}, aside from a much steeper increase in throughput and one occuring for much smaller problem sizes. That is presumably because cuBLAS is optimized for those scenarios than what any elementary native implementation could be. Furthermore, as expected, the peak throughput is also higher in this scenario. However, it is, notably, 70 GB/s short of the theoretical maximum, which still must be considered quite low given that it is only 80\% of what the bandwidht allows. Importantly, this supports the notion that it was not an error in the memory coalescing that caused the relatively slow native implementation. The reason for these behaviors still remains unknown. 
+The results using cuBLAS are found in Figure \ref{fig:case_a_cublas_mv_mult}. There, we observe roughly the same behavior as in Figure \ref{fig:case_a_native_mv_mult}, aside from a much steeper increase in throughput and one occuring for much smaller problem sizes. That is presumably because cuBLAS is optimized for those scenarios than what any elementary native implementation could be. Furthermore, as expected, the peak throughput is also higher in this scenario. However, it is, notably, 70 GB/s short of the theoretical maximum, which still must be considered quite low given that it is only 80\% of what the bandwidht allows. Importantly, this supports the notion that it was not an error in the memory coalescing that caused the relatively slow native implementation. The reason for these behaviors remains unknown to the author. 
 \begin{figure}[!ht]
     \centering
     \begin{subfigure}[b]{0.49\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{figs/cublas_loglog.pdf}
+        \includegraphics[width=\linewidth]{figs/case_a_cublas_loglog.pdf}
         \caption{The increase with loglog scale.}
         \label{fig:cublas_loglog}
     \end{subfigure}\hfill
     \begin{subfigure}[b]{0.49\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{figs/cublas_linear.pdf}
+        \includegraphics[width=\linewidth]{figs/case_a_cublas_linear.pdf}
 	\caption{The increase with linear scale.}
 	\label{fig:cublas_linear}
     \end{subfigure}\hfill
     \caption{cuBLAS matrix-vector multiplication with $M=N$ ranging from 100 to 10000.}
-    \label{fig:mv_cublas_mult}
+    \label{fig:case_a_cublas_mv_mult}
 \end{figure}
 \subsubsection{Part B}
+As we see in Figure \ref{fig:case_b_mv_mult}, the cuBLAS solver reaches a slightly higher peak performance, but performs worse as $M$ increases. Notably, it performs much better for small problem sizes. The latter is most likely becuase of being better configured to deal with non-typical scenarios, but the former issue is surprising giving the high-performance nature of BLAS. No explanation to that behavior is known to the author.
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figs/case_b_native.pdf}
+        \caption{The native solver.}
+        \label{fig:case_b_native}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figs/case_b_cublas.pdf}
+	\caption{The cuBLAS solver.}
+	\label{fig:case_b_cublas}
+    \end{subfigure}\hfill
+    \caption{Matrix-vector multiplication with $N=10000$ and $M$ as in Task 1.}
+    \label{fig:case_b_mv_mult}
+\end{figure}
+\subsubsection{Part C}
+As seen in Figure \ref{fig:case_c_mv_mult}, the throughput increases both for the native solver and for the cuBLAS solver as the number of rows increases. The reason for which is because we are now running the solvers with about 50\% extra rows, compared to the maximum case in Part A and B, while increasing the length of the rows as we did in Part A. Here, we observe that the throughput increases linearly until we reach the capacity of the local cache, which has a bandwidht of about 800 GB/s. As seen in Assignment 1, we are bandwidth-bound, and so we observe the same phenomenom of being limited by the bandwidth to the main graphics memory, which is 320 GB/s. Again, we, surprisingly, observe that the cuBLAS implementation performs \textit{worse} than the after the capacity of the local cache is reached. As in Part B, we offer no explanation to this behavior, but welcome one if it is available. 
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figs/case_c_native.pdf}
+        \caption{The native solver.}
+        \label{fig:case_c_native}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figs/case_c_cublas.pdf}
+	\caption{The cuBLAS solver.}
+	\label{fig:case_c_cublas}
+    \end{subfigure}\hfill
+    \caption{The matrix-vector multiplication with $M=15384$ and $N$ ranging from 10 to 1000.}
+    \label{fig:case_c_mv_mult}
+\end{figure}
+\subsection{Task 3}
+Please note that this implementation only supports a multiple of the given block size as the size of the matrices. Thus, we will perform the performance experiments from $M=N=K$ between 100 and 5000, but with this constraint in order to avoid having to spend a large amount of time simply tending to edge cases which will not affect the performance in any noteworthy way. \\
 
-\subsubsection{Part C}
-\subsection{Task 3}
-\subsection{Task 4}
-\end{document}
-\subsubsection{Part B}
-\subsubsection{Part C}
-\subsection{Task 3}
+Furthermore, please note that the main ideas for this code are greatly inspired, and partially borrowed from, the code found in NVIDIA's guide for CUDA programming called \texttt{CUDA C++ Programming Guide} (Section 3.2.3 named "Shared Memory", on pages 24-26) since it is a neat implementation using both shared memory for speed and a struct for tractability and readability of the code.
 \subsection{Task 4}
 \end{document}

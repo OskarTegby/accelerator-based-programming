@@ -1,17 +1,17 @@
 CC=nvcc
 RM=rm -f
 BLAS=-lcublas
-SRC1=native.cu
-SRC2=cublas.cu
-EXEC1=native
-EXEC2=cublas
+SRC1=native_mv_mult.cu
+SRC2=cublas_mv_mult.cu
+EXEC1=native_mv_mult
+EXEC2=cublas_mv_mult
 
-all: native cublas
+all: native_mv cublas_mv
 
-native:
+native_mv:
 	$(CC) src/$(SRC1) -o bin/$(EXEC1)
 
-cublas:
+cublas_mv:
 	$(CC) $(BLAS) src/$(SRC2) -o bin/$(EXEC2) 
 
 .PHONY: clean

@@ -22,7 +22,7 @@ const int block_size = 128;
 #define VERBOSE
 
 /*
- * Execution example: ./task1 -min 100 -max 10000 -repeat 20
+ * Execution example: ./native -min 100 -max 10000 -repeat 20
  */
 
 /*
@@ -118,12 +118,12 @@ __global__ void set_matrix_rowmaj(const int M, const int N, const float val, flo
 __global__ void set_matrix_colmaj(const int M, const int N, const float val, float *x)
 {
   const unsigned int i = threadIdx.x + blockIdx.x * blockDim.x;
-  if (i < N)
-    for (unsigned int j = 0; j < M; j++) {
+  if (i < M)
+    for (unsigned int j = 0; j < N; j++) {
 #ifdef DEBUG // inc vals
-      x[i * M + j] = i + j * N + 1;
+      x[i * N + j] = i * N + j + 1;
 #else
-      x[i * M + j] = val;
+      x[i * N + j] = val;
 #endif
   }
 }
@@ -133,7 +133,7 @@ __global__ void set_matrix_colmaj(const int M, const int N, const float val, flo
 
 
 /*
- * @brief       printing a matrix (in row-major format)
+ * @brief       printing a matrix (in column-major format)
  * @param       M       the number of columns,
  * @param       N       the number of rows,
  * @param       x       the matrix to print.
@@ -330,6 +330,7 @@ int main(int argc, char **argv)
   long N_min  = 8;
   long N_max  = -1;
   long repeat = -1;
+  long part = -1;
   long m, n;
 
   // parse from the command line
@@ -342,8 +343,17 @@ int main(int argc, char **argv)
         N_max = static_cast<long>(std::stod(argv[l + 1]));
       else if (option == "-repeat")
         repeat = std::atoll(argv[l + 1]);
+      else if (option == "-part")
+        part = std::atoll(argv[l + 1]);
       else
         std::cout << "Unknown option " << option << " - ignored!" << std::endl;
+    }
+
+  if (part < 0)  
+    {
+      std::cout << "Expected valid part, got " << part
+                << std::endl;
+      return 0;
     }
 
   if (N_min < 1)
@@ -361,7 +371,6 @@ int main(int argc, char **argv)
   n = m;
   benchmark_triad(m, n, repeat);
 #else
-  int part = 2;
   std::ofstream myfile;
 
   if (part == 0)
@@ -396,7 +405,7 @@ int main(int argc, char **argv)
   }
   else if (part == 2)  
   {
-    myfile.open("/home/oskart/abp/a2/csv/native_rect2.csv");
+  myfile.open("/home/oskart/abp/a2/csv/native_rect2.csv");
     m = 16384;
     for (n = N_min; n <= N_max; n = (1 + n * 1.1))
     {   

@@ -17,25 +17,25 @@
 * 4. Write the report. The results were recorded earlier.
 */
 
-const int block_size = 512;
+const int block_size = 128;
 //#define DEBUG
 //#define DEBUG_SIZE 4
 #define VERBOSE
 
 /*
- * Execution example: ./task1 -min 100 -max 10000 -repeat 20
+ * Execution example: ./cublas -min 100 -max 10000 -repeat 20
  */
 
 /*
  * @brief	computing matrix-vector product.
- * @param       N       the number of rows,
  * @param       M       the number of columns,
+ * @param       N       the number of rows,
  * @param       A       the matrix multiplying with,
  * @param	x	the vector multiplying with,
  * @param	b	the resulting vector. 
  */
-__global__ void compute_triad(const int    N,
-                              const int    M,
+__global__ void compute_triad(const int    M,
+                              const int    N,
                               const float *A,
                               const float *x,
                               float *      b)
@@ -44,11 +44,10 @@ __global__ void compute_triad(const int    N,
   float sum = 0;
   if (i < M) {
     for (unsigned int j = 0; j < N; ++j) {
-      sum += A[i + j * N] * x[j];
+      sum += A[i + j * M] * x[j];
 #if defined(DEBUG) && defined(VERBOSE)
-      printf("b[%d]: %f\n", i, sum);
       printf("A[%d] * x[%d] = b[%d]: %f * %f = %f\n", \
-              i * N + j, j, i, A[i * N + j], x[j], sum);
+              i + j * M, j, i, A[i + j * M], x[j], sum);
 #endif
     }
     b[i] = sum;
@@ -112,20 +111,20 @@ __global__ void set_matrix_rowmaj(const int M, const int N, const float val, flo
   
 /*
  * @brief      setting elements column-major-wise in a matrix
- * @param       N       the number of rows,
  * @param       M       the number of columns,
+ * @param       N       the number of rows,
  * @param       val     the value to set everywhere,
  * @param       x       the matrix to set values in.
  */
 __global__ void set_matrix_colmaj(const int M, const int N, const float val, float *x)
 {
   const unsigned int i = threadIdx.x + blockIdx.x * blockDim.x;
-  for (unsigned int j = 0; j < M; j++)
-    if (i < N) {
+  if (i < M)
+    for (unsigned int j = 0; j < N; j++) {
 #ifdef DEBUG // inc vals
-      x[i * M + j] = i + j * N + 1;
+      x[i * N + j] = i * N + j + 1;
 #else
-      x[i * M + j] = val;
+      x[i * N + j] = val;
 #endif
   }
 }
@@ -135,41 +134,20 @@ __global__ void set_matrix_colmaj(const int M, const int N, const float val, flo
 
 
 /*
- * @brief       printing a matrix
- * @param       N       the number of rows,
+ * @brief       printing a matrix (in column-major format)
  * @param       M       the number of columns,
+ * @param       N       the number of rows,
  * @param       x       the matrix to print.
  */
 void print_matrix(const int M, const int N, std::vector<float> x)
 {
-  // printf("%f ", x.at(0));
   printf("\n");
-  for (int j = 0; j < M; j++) {
-    for (int i = 0; i < N; i++)
-      printf("%f ", x.at(i * M + j));
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++)
+      printf("%f ", x.at(i + j * M));
     printf("\n");
   }
   printf("\n");
-    
- #if defined(DEBUG) && defined(VERBOSE)
-   int i = 0;
-   printf("A[%d] = %f\n", i, x[i]);
-   i += 1;
-   printf("A[%d] = %f\n", i, x[i]);
-   i += 1;
-   printf("A[%d] = %f\n", i, x[i]);
-   i += 1;
-   printf("A[%d] = %f\n\n", i, x[i]);
-
-   i = 0;
-   printf("A[%d] = %f\n", i, x[i]);
-   i += M;
-   printf("A[%d] = %f\n", i, x[i]);
-   i += M;
-   printf("A[%d] = %f\n", i, x[i]);
-   i += M;
-   printf("A[%d] = %f\n", i, x[i]);
- #endif
 }
 
 
@@ -178,8 +156,8 @@ void print_matrix(const int M, const int N, std::vector<float> x)
 
 /*
  * @brief	printing a vector
- * @param	N	the vector length
- * @param	x	the vector to print
+ * @param	N	the vector length,
+ * @param	x	the vector to print.
  */
 void print_vector(const int N, std::vector<float> x)
 {
@@ -197,12 +175,12 @@ void print_vector(const int N, std::vector<float> x)
 /*
  * @brief 	performs matrix and vector multiplications on the GPU
 		according to the specified settings.		
- * @param	N	the number of columns in the matrix,
  * @param	M	the number of rows in the matrix,
+ * @param	N	the number of columns in the matrix,
  * @param	repeat	repetitions used to minimize noise.	
  */
-float benchmark_triad(const std::size_t N,
-                     const std::size_t M,
+float benchmark_triad(const std::size_t M,
+                     const std::size_t N,
                      const long long   repeat)
 {
   float *A, *x, *b;
@@ -218,11 +196,11 @@ float benchmark_triad(const std::size_t N,
   float beta = 0.f;
 
   // allocate memory on the device
-  cudaMalloc(&A, N * M * sizeof(float));
+  cudaMalloc(&A, M * N * sizeof(float));
   cudaMalloc(&x, N * sizeof(float));
   cudaMalloc(&b, M * sizeof(float));
   
-  unsigned int n_blocks = (N * M + block_size - 1) / block_size;
+  unsigned int n_blocks = (M * N + block_size - 1) / block_size;
   
   set_matrix_colmaj<<<n_blocks, block_size>>>(M, N, 1.f, A);
   n_blocks = (N + block_size - 1) / block_size;
@@ -231,7 +209,7 @@ float benchmark_triad(const std::size_t N,
   set_vector<<<n_blocks, block_size>>>(M, 0.f, b);
   
   std::vector<float> result_host(M);
-  std::vector<float> A_host(N * M);
+  std::vector<float> A_host(M * N);
   std::vector<float> x_host(N);
 
 #ifdef DEBUG
@@ -280,7 +258,7 @@ float benchmark_triad(const std::size_t N,
   cudaMemcpy(x_host.data(), x, N * sizeof(float), cudaMemcpyDeviceToHost);
 
 #ifdef DEBUG
-  printf("A =");
+  printf("\nA =");
   print_matrix(M, N, A_host);
   printf("x = ");
   print_vector(N, x_host);
@@ -309,13 +287,13 @@ float benchmark_triad(const std::size_t N,
   cudaFree(b);
 
 #ifdef VERBOSE
-  std::cout << "(N, M) = (" << N << ", " << M << ")"
+  std::cout << "(M, N) = (" << M << ", " << N << ")"
             << std::setw(8) << " - min/avg/max: "
             << std::setw(11) << best << " / "
             << std::setw(11) << avg / n_tests << " / "
             << std::setw(11) << worst
             << " seconds, or " << std::setw(8) << M * 1e-6 / best
-            << " MUPD/s, or " << std::setw(8) << (N * M + N + M) * sizeof(float) * 1e-9 / best
+            << " MUPD/s, or " << std::setw(8) << (M * N + M + N) * sizeof(float) * 1e-9 / best
             << " GB/s, or " << std::setw(8) << M * N * 2 / best
             << " FLOP/s" << std::endl;
 #endif
@@ -327,7 +305,7 @@ float benchmark_triad(const std::size_t N,
  * M * 1e-6 for storing the results.
 
  ** GB/s:
- * N * M reads from the matrix,
+ * M * N reads from the matrix,
  * N reads from the vector, and
  * M writes for the result.
 
@@ -340,7 +318,7 @@ float benchmark_triad(const std::size_t N,
 */
 
   // returning the GB/s to write to the csv file
-  return (N * M + N + M) * sizeof(float) * 1e-9 / best; 
+  return (M * N + M + N) * sizeof(float) * 1e-9 / best; 
 }
 
 
@@ -370,6 +348,7 @@ int main(int argc, char **argv)
   long N_min  = 8;
   long N_max  = -1;
   long repeat = -1;
+  long part = -1;
   long m, n;
 
   // parse from the command line
@@ -382,8 +361,17 @@ int main(int argc, char **argv)
         N_max = static_cast<long>(std::stod(argv[l + 1]));
       else if (option == "-repeat")
         repeat = std::atoll(argv[l + 1]);
+      else if (option == "-part")
+        part = std::atoll(argv[l + 1]);
       else
         std::cout << "Unknown option " << option << " - ignored!" << std::endl;
+    }
+  
+  if (part < 0)
+    {
+      std::cout << "Expected valid part, got " << part 
+                << std::endl;
+      return 0;
     }
 
   if (N_min < 1)
@@ -397,11 +385,10 @@ int main(int argc, char **argv)
     N_max = N_min;
 
 #ifdef DEBUG
-  n = DEBUG_SIZE;
-  m = n;
-  benchmark_triad(n, m, repeat);
+  m = DEBUG_SIZE;
+  n = m;
+  benchmark_triad(m, n, repeat);
 #else
-  int part = 1;
   std::ofstream myfile;
 
   if (part == 0)
@@ -416,7 +403,7 @@ int main(int argc, char **argv)
         m = n;
         myfile << n;
         myfile << " ";
-        myfile << benchmark_triad(n, m, repeat);
+        myfile << benchmark_triad(m, n, repeat);
         myfile << std::endl;
     }
   }
@@ -430,7 +417,7 @@ int main(int argc, char **argv)
         m = (m + 7) / 8 * 8;
         myfile << m;
         myfile << " ";
-        myfile << benchmark_triad(n, m, repeat);
+        myfile << benchmark_triad(m, n, repeat);
         myfile << std::endl;
     }
   }
@@ -444,7 +431,7 @@ int main(int argc, char **argv)
         n = (n + 7) / 8 * 8;
         myfile << n;
         myfile << " ";
-        myfile << benchmark_triad(n, m, repeat);
+        myfile << benchmark_triad(m, n, repeat);
         myfile << std::endl;
     }
   }
