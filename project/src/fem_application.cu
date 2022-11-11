@@ -81,6 +81,8 @@ Number run_test(const long long N, const long long n_repeat)
 {
   Number throughput, mupds;
 
+  const auto t2 = std::chrono::steady_clock::now();
+
   if (get_n_mpi_ranks(MPI_COMM_WORLD) > 1)
     {
       std::cout << "Program not written for multiple MPI processes"
@@ -115,8 +117,16 @@ Number run_test(const long long N, const long long n_repeat)
           std::sin(PI * static_cast<double>(iz + 1) / (N + 1));
 
   // This code is added: It copies the data between host and device
+  
+  const auto t3 = std::chrono::steady_clock::now();
+  
   Vector<Number> src_device = src.copy_to_device();
   Vector<Number> dst_device = dst.copy_to_device();
+
+    const double transferTime =
+      std::chrono::duration_cast<std::chrono::duration<double>>(
+        std::chrono::steady_clock::now() - t3)
+        .count();
 
   matrix_dev.apply(src_device, dst_device);
 
@@ -200,10 +210,14 @@ Number run_test(const long long N, const long long n_repeat)
     const double l2_norm = result.l2_norm();
     std::cout << "Error conjugate gradient solve: " << l2_norm << std::endl;
 
-    return 1e-6 * dst.size() * info.first / time;
   }
 
-  return throughput;
+    const double allTime =
+      std::chrono::duration_cast<std::chrono::duration<double>>(
+        std::chrono::steady_clock::now() - t2)
+        .count();
+
+  return allTime;
 }
 
 
@@ -244,7 +258,7 @@ int main(int argc, char **argv)
     }
 
   std::ofstream myfile;
-  myfile.open ("gpu_gbs.csv");
+  myfile.open ("time_total.csv");
 
   if (N == -1)
     for (unsigned long long NN = 24; NN < 256; NN += 24)

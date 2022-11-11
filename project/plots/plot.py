@@ -3,14 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Loading the data
-cpu_double_gbs = np.loadtxt('csv/cpu_double_gbs.csv')
-cpu_float_gbs = np.loadtxt('csv/cpu_float_gbs.csv')
-cpu_double_mupds = np.loadtxt('csv/cpu_double_mupds.csv')
-cpu_float_mupds = np.loadtxt('csv/cpu_float_mupds.csv')
-gpu_double_gbs = np.loadtxt('csv/gpu_double_mupds.csv')
-gpu_float_gbs = np.loadtxt('csv/gpu_float_mupds.csv')
-gpu_double_mupds = np.loadtxt('csv/gpu_double_gbs.csv')
-gpu_float_mupds = np.loadtxt('csv/gpu_float_gbs.csv')
+cpu_double_gbs = np.loadtxt('../csv/cpu_double_gbs.csv')
+cpu_float_gbs = np.loadtxt('../csv/cpu_float_gbs.csv')
+cpu_double_mupds = np.loadtxt('../csv/cpu_double_mupds.csv')
+cpu_float_mupds = np.loadtxt('../csv/cpu_float_mupds.csv')
+gpu_double_gbs = np.loadtxt('../csv/gpu_double_gbs.csv')
+gpu_float_gbs = np.loadtxt('../csv/gpu_float_gbs.csv')
+gpu_double_mupds = np.loadtxt('../csv/gpu_double_mupds.csv')
+gpu_float_mupds = np.loadtxt('../csv/gpu_float_mupds.csv')
 
 u1 = cpu_double_gbs[:]
 u2 = cpu_float_gbs[:]
@@ -37,7 +37,7 @@ t7 = []
 s8 = []
 t8 = []
 
-for j in range(len(u1)):
+for j in range(1,len(u1)):
     s1.append(u1[j][1])
     t1.append(u1[j][0])
 
@@ -63,19 +63,41 @@ for j in range(len(u1)):
     t8.append(u8[j][0])
 
 # Plotting the data
-# plt.plot(t1, s1, label = "cpu_double_gbs")
-# plt.plot(t2, s2, label = "cpu_float_gbs")
-# plt.plot(t3, s3, label = "cpu_double_mupds")
-# plt.plot(t4, s4, label = "cpu_float_mupds")
-plt.plot(t5, s5, label = "gpu_double_gbs")
-plt.plot(t6, s6, label = "gpu_float_gbs")
-# plt.plot(t7, s7, label = "gpu_double_mupds")
-# plt.plot(t8, s8, label = "gpu_float_mupds")
+plt.figure(0)
+plt.plot(t1, s1, label = "cpu_double_gbs")
+plt.plot(t2, s2, label = "cpu_float_gbs")
+plt.legend()
+plt.xlabel("Size")
+plt.ylabel("GB/s")
+plt.title("Throughput (CPU)")
+plt.grid()
+
+plt.figure(1)
+plt.plot(t3, s3, label = "cpu_double_mupds")
+plt.plot(t4, s4, label = "cpu_float_mupds")
 plt.legend()
 plt.xlabel("Size")
 plt.ylabel("MUPD/s")
-plt.title("Throughput")
-
+plt.title("Compute (CPU)")
 plt.grid()
+ 
+plt.figure(2)
+plt.loglog(t5, s5, label = "gpu_double_gbs")
+plt.loglog(t6, s6, label = "gpu_float_gbs")
+plt.legend()
+plt.xlabel("Size")
+plt.ylabel("GB/s")
+plt.title("Throughput (GPU)")
+plt.grid()
+
+plt.figure(3)
+plt.loglog(t7, s7, label = "gpu_double_mupds")
+plt.loglog(t8, s8, label = "gpu_float_mupds")
+plt.legend()
+plt.xlabel("Size")
+plt.ylabel("MUPD/s")
+plt.title("Compute (GPU)")
+plt.grid()
+
 plt.show()
 exit()

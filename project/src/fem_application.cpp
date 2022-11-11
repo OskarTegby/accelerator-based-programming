@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 
-#define DISABLE_CUDA 0
+#define DISABLE_CUDA 1
 
 #include "conjugate_gradient.hpp"
 #include "sparse_matrix.hpp"
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
     }
 
   std::ofstream myfile;
-  myfile.open ("gpu_gbs.csv");
+  myfile.open ("cpu_gbs.csv");
 
   if (N == -1)
     for (unsigned long long NN = 24; NN < 256; NN += 24)
